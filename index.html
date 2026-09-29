@@ -1,0 +1,1778 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manga Animator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #111;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* HEADER */
+header {
+    height: 60px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #333;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 15px;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: #aaa;
+}
+
+.headerButtons {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+button {
+    background: #292929;
+    color: white;
+    border: 1px solid #555;
+    padding: 9px 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #3b3b3b;
+}
+
+button.active {
+    background: white;
+    color: black;
+}
+
+/* MAIN */
+.main {
+    height: calc(100vh - 60px - 145px);
+    display: flex;
+}
+
+/* LEFT TOOLBAR */
+.toolbar {
+    width: 70px;
+    background: #1b1b1b;
+    border-right: 2px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+    gap: 10px;
+}
+
+.tool {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    padding: 0;
+}
+
+.tool.active {
+    background: white;
+    color: black;
+}
+
+/* CANVAS AREA */
+.canvasArea {
+    flex: 1;
+    background:
+        linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+        linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+    background-size: 30px 30px;
+    background-position: 0 0, 0 15px, 15px -15px, -15px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvasWrapper {
+    position: relative;
+    box-shadow: 0 0 25px black;
+}
+
+canvas {
+    background: white;
+    display: block;
+    cursor: crosshair;
+}
+
+#onionCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+/* RIGHT PANEL */
+.rightPanel {
+    width: 230px;
+    background: #1b1b1b;
+    border-left: 2px solid #333;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.panelTitle {
+    font-weight: bold;
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.setting {
+    margin-bottom: 18px;
+}
+
+.setting label {
+    display: block;
+    color: #ccc;
+    margin-bottom: 7px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+select {
+    width: 100%;
+    background: #292929;
+    color: white;
+    border: 1px solid #555;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+/* TIMELINE */
+.timeline {
+    height: 145px;
+    background: #181818;
+    border-top: 2px solid #333;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 12px;
+}
+
+.timelineTop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.timelineTop button {
+    padding: 7px 11px;
+}
+
+.frames {
+    display: flex;
+    gap: 10px;
+}
+
+.frame {
+    width: 110px;
+    height: 90px;
+    background: #292929;
+    border: 2px solid #555;
+    border-radius: 5px;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.frame.selected {
+    border: 3px solid white;
+}
+
+.frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: white;
+}
+
+.frameNumber {
+    position: absolute;
+    bottom: 3px;
+    left: 4px;
+    background: rgba(0,0,0,.75);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.deleteFrame {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(0,0,0,.8);
+    color: white;
+    border: none;
+    padding: 2px 5px;
+    font-size: 11px;
+}
+
+/* STATUS */
+.status {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0,0,0,.65);
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+/* MOBILE */
+@media(max-width: 800px) {
+    .rightPanel {
+        display: none;
+    }
+
+    .toolbar {
+        width: 58px;
+    }
+
+    .tool {
+        width: 42px;
+        height: 42px;
+    }
+
+    .headerButtons button:nth-child(2),
+    .headerButtons button:nth-child(3) {
+        display: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">MANGA <span>ANIMATOR</span></div>
+
+    <div class="headerButtons">
+        <button onclick="newProject()">New</button>
+        <button onclick="saveProject()">Save</button>
+        <button onclick="loadProject()">Load</button>
+        <button onclick="exportFrame()">Export PNG</button>
+    </div>
+</header>
+
+<div class="main">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+
+        <button class="tool active"
+                id="brushBtn"
+                onclick="setTool('brush')"
+                title="Brush">
+            ✏️
+        </button>
+
+        <button class="tool"
+                id="eraserBtn"
+                onclick="setTool('eraser')"
+                title="Eraser">
+            🧹
+        </button>
+
+        <button class="tool"
+                onclick="undo()"
+                title="Undo">
+            ↩️
+        </button>
+
+        <button class="tool"
+                onclick="clearCanvas()"
+                title="Clear">
+            🗑️
+        </button>
+
+    </div>
+
+    <!-- CANVAS -->
+    <div class="canvasArea" id="canvasArea">
+
+        <div class="canvasWrapper">
+
+            <canvas id="onionCanvas"
+                    width="900"
+                    height="600"></canvas>
+
+            <canvas id="canvas"
+                    width="900"
+                    height="600"></canvas>
+
+        </div>
+
+        <div class="status" id="status">
+            Frame 1
+        </div>
+
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="rightPanel">
+
+        <div class="panelTitle">
+            Animation Settings
+        </div>
+
+        <div class="setting">
+            <label>Brush Size</label>
+
+            <input
+                type="range"
+                id="brushSize"
+                min="1"
+                max="50"
+                value="5">
+
+            <span id="brushSizeText">5 px</span>
+        </div>
+
+        <div class="setting">
+
+            <label>Animation FPS</label>
+
+            <input
+                type="range"
+                id="fps"
+                min="1"
+                max="30"
+                value="12">
+
+            <span id="fpsText">12 FPS</span>
+
+        </div>
+
+        <div class="setting">
+
+            <label>Onion Skin</label>
+
+            <button
+                id="onionButton"
+                onclick="toggleOnion()"
+                class="active"
+                style="width:100%;">
+                ON
+            </button>
+
+        </div>
+
+        <div class="setting">
+
+            <label>Canvas Size</label>
+
+            <select id="canvasSize"
+                    onchange="changeCanvasSize()">
+
+                <option value="900x600">
+                    900 × 600
+                </option>
+
+                <option value="800x800">
+                    800 × 800
+                </option>
+
+                <option value="1280x720">
+                    1280 × 720
+                </option>
+
+            </select>
+
+        </div>
+
+        <div class="setting">
+
+            <label>Playback</label>
+
+            <button
+                onclick="playAnimation()"
+                style="width:100%; margin-bottom:6px;">
+                ▶ Play
+            </button>
+
+            <button
+                onclick="stopAnimation()"
+                style="width:100%;">
+                ⏹ Stop
+            </button>
+
+        </div>
+
+        <div class="setting">
+
+            <label>Frame Controls</label>
+
+            <button
+                onclick="previousFrame()"
+                style="width:48%;">
+                ◀
+            </button>
+
+            <button
+                onclick="nextFrame()"
+                style="width:48%;">
+                ▶
+            </button>
+
+        </div>
+
+        <div class="setting">
+
+            <label>Tip</label>
+
+            <div style="font-size:12px;color:#aaa;line-height:1.5;">
+                Draw your first manga frame,
+                add another frame, then use
+                onion skin to trace movement.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- TIMELINE -->
+<div class="timeline">
+
+    <div class="timelineTop">
+
+        <button onclick="addFrame()">
+            ➕ Add Frame
+        </button>
+
+        <button onclick="duplicateFrame()">
+            📋 Duplicate
+        </button>
+
+        <button onclick="previousFrame()">
+            ◀
+        </button>
+
+        <button onclick="nextFrame()">
+            ▶
+        </button>
+
+        <span id="frameCounter">
+            Frame 1 / 1
+        </span>
+
+    </div>
+
+    <div class="frames" id="frames"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   CANVAS
+========================= */
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+let onionCanvas = document.getElementById("onionCanvas");
+let onionCtx = onionCanvas.getContext("2d");
+
+let drawing = false;
+
+let tool = "brush";
+
+let brushSize = 5;
+
+let onionEnabled = true;
+
+let frames = [];
+
+let currentFrame = 0;
+
+let history = [];
+
+let playing = false;
+
+let playTimer;
+
+
+/* =========================
+   START PROJECT
+========================= */
+
+function createBlankCanvas() {
+
+    let temp = document.createElement("canvas");
+
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+
+    let tempCtx = temp.getContext("2d");
+
+    tempCtx.fillStyle = "white";
+    tempCtx.fillRect(
+        0,
+        0,
+        temp.width,
+        temp.height
+    );
+
+    return temp.toDataURL("image/png");
+}
+
+
+function startProject() {
+
+    frames = [
+        createBlankCanvas()
+    ];
+
+    currentFrame = 0;
+
+    renderFrames();
+
+    loadFrame(0);
+}
+
+
+startProject();
+
+
+/* =========================
+   DRAWING
+========================= */
+
+function getMousePosition(e) {
+
+    let rect = canvas.getBoundingClientRect();
+
+    let scaleX =
+        canvas.width / rect.width;
+
+    let scaleY =
+        canvas.height / rect.height;
+
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+
+function startDrawing(e) {
+
+    if (playing) return;
+
+    drawing = true;
+
+    saveHistory();
+
+    let pos = getMousePosition(e);
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        pos.x,
+        pos.y
+    );
+}
+
+
+function draw(e) {
+
+    if (!drawing) return;
+
+    let pos = getMousePosition(e);
+
+    ctx.lineWidth = brushSize;
+
+    ctx.lineCap = "round";
+
+    ctx.lineJoin = "round";
+
+    if (tool === "brush") {
+
+        ctx.globalCompositeOperation =
+            "source-over";
+
+        ctx.strokeStyle = "black";
+
+    } else {
+
+        ctx.globalCompositeOperation =
+            "destination-out";
+
+    }
+
+    ctx.lineTo(
+        pos.x,
+        pos.y
+    );
+
+    ctx.stroke();
+
+    updateCurrentFrame();
+}
+
+
+function stopDrawing() {
+
+    if (!drawing) return;
+
+    drawing = false;
+
+    ctx.closePath();
+
+    ctx.globalCompositeOperation =
+        "source-over";
+
+    updateCurrentFrame();
+
+    renderFrames();
+}
+
+
+canvas.addEventListener(
+    "mousedown",
+    startDrawing
+);
+
+canvas.addEventListener(
+    "mousemove",
+    draw
+);
+
+canvas.addEventListener(
+    "mouseup",
+    stopDrawing
+);
+
+canvas.addEventListener(
+    "mouseleave",
+    stopDrawing
+);
+
+
+/* TOUCH */
+
+canvas.addEventListener(
+    "touchstart",
+    function(e) {
+
+        e.preventDefault();
+
+        let touch = e.touches[0];
+
+        startDrawing({
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+
+    }
+);
+
+canvas.addEventListener(
+    "touchmove",
+    function(e) {
+
+        e.preventDefault();
+
+        let touch = e.touches[0];
+
+        draw({
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+
+    }
+);
+
+canvas.addEventListener(
+    "touchend",
+    function() {
+
+        stopDrawing();
+
+    }
+);
+
+
+/* =========================
+   HISTORY / UNDO
+========================= */
+
+function saveHistory() {
+
+    history.push(
+        canvas.toDataURL()
+    );
+
+    if (history.length > 20) {
+        history.shift();
+    }
+}
+
+
+function undo() {
+
+    if (history.length === 0) return;
+
+    let previous =
+        history.pop();
+
+    let img = new Image();
+
+    img.onload = function() {
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        ctx.drawImage(
+            img,
+            0,
+            0
+        );
+
+        updateCurrentFrame();
+
+        renderFrames();
+
+    };
+
+    img.src = previous;
+}
+
+
+/* =========================
+   TOOLS
+========================= */
+
+function setTool(newTool) {
+
+    tool = newTool;
+
+    document
+        .getElementById("brushBtn")
+        .classList.remove("active");
+
+    document
+        .getElementById("eraserBtn")
+        .classList.remove("active");
+
+    if (tool === "brush") {
+
+        document
+            .getElementById("brushBtn")
+            .classList.add("active");
+
+    } else {
+
+        document
+            .getElementById("eraserBtn")
+            .classList.add("active");
+
+    }
+}
+
+
+function clearCanvas() {
+
+    if (
+        !confirm(
+            "Clear this frame?"
+        )
+    ) {
+        return;
+    }
+
+    saveHistory();
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    updateCurrentFrame();
+
+    renderFrames();
+}
+
+
+/* =========================
+   BRUSH SIZE
+========================= */
+
+document
+    .getElementById("brushSize")
+    .addEventListener(
+        "input",
+        function() {
+
+            brushSize =
+                Number(this.value);
+
+            document
+                .getElementById(
+                    "brushSizeText"
+                )
+                .textContent =
+                    brushSize + " px";
+
+        }
+    );
+
+
+/* =========================
+   FRAMES
+========================= */
+
+function updateCurrentFrame() {
+
+    frames[currentFrame] =
+        canvas.toDataURL(
+            "image/png"
+        );
+}
+
+
+function loadFrame(index) {
+
+    if (
+        index < 0 ||
+        index >= frames.length
+    ) {
+        return;
+    }
+
+    currentFrame = index;
+
+    let img = new Image();
+
+    img.onload = function() {
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        ctx.drawImage(
+            img,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        drawOnionSkin();
+
+        updateStatus();
+
+        renderFrames();
+
+    };
+
+    img.src = frames[index];
+}
+
+
+function addFrame() {
+
+    updateCurrentFrame();
+
+    frames.splice(
+        currentFrame + 1,
+        0,
+        createBlankCanvas()
+    );
+
+    currentFrame++;
+
+    loadFrame(
+        currentFrame
+    );
+}
+
+
+function duplicateFrame() {
+
+    updateCurrentFrame();
+
+    frames.splice(
+        currentFrame + 1,
+        0,
+        frames[currentFrame]
+    );
+
+    currentFrame++;
+
+    loadFrame(
+        currentFrame
+    );
+}
+
+
+function deleteFrame(index) {
+
+    if (frames.length === 1) {
+
+        alert(
+            "You need at least one frame."
+        );
+
+        return;
+    }
+
+    frames.splice(
+        index,
+        1
+    );
+
+    if (
+        currentFrame >=
+        frames.length
+    ) {
+        currentFrame =
+            frames.length - 1;
+    }
+
+    loadFrame(
+        currentFrame
+    );
+}
+
+
+function nextFrame() {
+
+    updateCurrentFrame();
+
+    if (
+        currentFrame <
+        frames.length - 1
+    ) {
+
+        currentFrame++;
+
+        loadFrame(
+            currentFrame
+        );
+
+    } else {
+
+        currentFrame = 0;
+
+        loadFrame(
+            currentFrame
+        );
+    }
+}
+
+
+function previousFrame() {
+
+    updateCurrentFrame();
+
+    if (currentFrame > 0) {
+
+        currentFrame--;
+
+    } else {
+
+        currentFrame =
+            frames.length - 1;
+
+    }
+
+    loadFrame(
+        currentFrame
+    );
+}
+
+
+/* =========================
+   TIMELINE
+========================= */
+
+function renderFrames() {
+
+    let container =
+        document.getElementById(
+            "frames"
+        );
+
+    container.innerHTML = "";
+
+    frames.forEach(
+        function(frame, index) {
+
+            let div =
+                document.createElement(
+                    "div"
+                );
+
+            div.className =
+                "frame";
+
+            if (
+                index === currentFrame
+            ) {
+
+                div.classList.add(
+                    "selected"
+                );
+
+            }
+
+            let img =
+                document.createElement(
+                    "img"
+                );
+
+            img.src = frame;
+
+            let number =
+                document.createElement(
+                    "div"
+                );
+
+            number.className =
+                "frameNumber";
+
+            number.textContent =
+                index + 1;
+
+            let deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+            deleteButton.className =
+                "deleteFrame";
+
+            deleteButton.textContent =
+                "×";
+
+            deleteButton.onclick =
+                function(e) {
+
+                    e.stopPropagation();
+
+                    deleteFrame(index);
+
+                };
+
+            div.appendChild(img);
+
+            div.appendChild(number);
+
+            div.appendChild(
+                deleteButton
+            );
+
+            div.onclick =
+                function() {
+
+                    updateCurrentFrame();
+
+                    loadFrame(index);
+
+                };
+
+            container.appendChild(div);
+
+        }
+    );
+
+    document
+        .getElementById(
+            "frameCounter"
+        )
+        .textContent =
+            "Frame " +
+            (currentFrame + 1) +
+            " / " +
+            frames.length;
+}
+
+
+function updateStatus() {
+
+    document
+        .getElementById(
+            "status"
+        )
+        .textContent =
+            "Frame " +
+            (currentFrame + 1) +
+            " / " +
+            frames.length;
+}
+
+
+/* =========================
+   ONION SKIN
+========================= */
+
+function toggleOnion() {
+
+    onionEnabled =
+        !onionEnabled;
+
+    let button =
+        document.getElementById(
+            "onionButton"
+        );
+
+    if (onionEnabled) {
+
+        button.textContent = "ON";
+
+        button.classList.add(
+            "active"
+        );
+
+    } else {
+
+        button.textContent = "OFF";
+
+        button.classList.remove(
+            "active"
+        );
+
+    }
+
+    drawOnionSkin();
+}
+
+
+function drawOnionSkin() {
+
+    onionCtx.clearRect(
+        0,
+        0,
+        onionCanvas.width,
+        onionCanvas.height
+    );
+
+    if (
+        !onionEnabled ||
+        currentFrame === 0
+    ) {
+        return;
+    }
+
+    let img = new Image();
+
+    img.onload = function() {
+
+        onionCtx.globalAlpha =
+            0.25;
+
+        onionCtx.globalCompositeOperation =
+            "source-over";
+
+        onionCtx.drawImage(
+            img,
+            0,
+            0,
+            onionCanvas.width,
+            onionCanvas.height
+        );
+
+        /*
+            Make the previous frame
+            slightly lighter so the
+            current drawing is easier
+            to see.
+        */
+
+        onionCtx.globalAlpha = 1;
+
+    };
+
+    img.src =
+        frames[currentFrame - 1];
+}
+
+
+/* =========================
+   PLAYBACK
+========================= */
+
+document
+    .getElementById("fps")
+    .addEventListener(
+        "input",
+        function() {
+
+            let value =
+                Number(this.value);
+
+            document
+                .getElementById(
+                    "fpsText"
+                )
+                .textContent =
+                    value + " FPS";
+
+            if (playing) {
+
+                stopAnimation();
+
+                playAnimation();
+
+            }
+
+        }
+    );
+
+
+function playAnimation() {
+
+    if (playing) return;
+
+    updateCurrentFrame();
+
+    playing = true;
+
+    let fps =
+        Number(
+            document.getElementById(
+                "fps"
+            ).value
+        );
+
+    let delay =
+        1000 / fps;
+
+    playTimer =
+        setInterval(
+            function() {
+
+                currentFrame++;
+
+                if (
+                    currentFrame >=
+                    frames.length
+                ) {
+
+                    currentFrame = 0;
+
+                }
+
+                loadFrame(
+                    currentFrame
+                );
+
+            },
+            delay
+        );
+}
+
+
+function stopAnimation() {
+
+    playing = false;
+
+    clearInterval(
+        playTimer
+    );
+}
+
+
+/* =========================
+   EXPORT PNG
+========================= */
+
+function exportFrame() {
+
+    updateCurrentFrame();
+
+    let link =
+        document.createElement(
+            "a"
+        );
+
+    link.download =
+        "manga-frame-" +
+        (currentFrame + 1) +
+        ".png";
+
+    link.href =
+        frames[currentFrame];
+
+    link.click();
+}
+
+
+/* =========================
+   SAVE PROJECT
+========================= */
+
+function saveProject() {
+
+    updateCurrentFrame();
+
+    let project = {
+
+        version: 1,
+
+        width:
+            canvas.width,
+
+        height:
+            canvas.height,
+
+        fps:
+            Number(
+                document
+                    .getElementById(
+                        "fps"
+                    ).value
+            ),
+
+        frames: frames
+
+    };
+
+    let blob =
+        new Blob(
+            [
+                JSON.stringify(project)
+            ],
+            {
+                type:
+                    "application/json"
+            }
+        );
+
+    let url =
+        URL.createObjectURL(
+            blob
+        );
+
+    let link =
+        document.createElement(
+            "a"
+        );
+
+    link.href = url;
+
+    link.download =
+        "manga-animation.json";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+}
+
+
+/* =========================
+   LOAD PROJECT
+========================= */
+
+function loadProject() {
+
+    let input =
+        document.createElement(
+            "input"
+        );
+
+    input.type = "file";
+
+    input.accept =
+        ".json";
+
+    input.onchange =
+        function(e) {
+
+            let file =
+                e.target.files[0];
+
+            if (!file) return;
+
+            let reader =
+                new FileReader();
+
+            reader.onload =
+                function(event) {
+
+                    try {
+
+                        let project =
+                            JSON.parse(
+                                event.target.result
+                            );
+
+                        frames =
+                            project.frames;
+
+                        currentFrame = 0;
+
+                        if (
+                            project.fps
+                        ) {
+
+                            document
+                                .getElementById(
+                                    "fps"
+                                )
+                                .value =
+                                    project.fps;
+
+                            document
+                                .getElementById(
+                                    "fpsText"
+                                )
+                                .textContent =
+                                    project.fps +
+                                    " FPS";
+
+                        }
+
+                        loadFrame(0);
+
+                    } catch {
+
+                        alert(
+                            "This is not a valid manga animation project."
+                        );
+
+                    }
+
+                };
+
+            reader.readAsText(file);
+
+        };
+
+    input.click();
+}
+
+
+/* =========================
+   NEW PROJECT
+========================= */
+
+function newProject() {
+
+    if (
+        !confirm(
+            "Start a new project?"
+        )
+    ) {
+        return;
+    }
+
+    stopAnimation();
+
+    frames = [
+        createBlankCanvas()
+    ];
+
+    currentFrame = 0;
+
+    history = [];
+
+    loadFrame(0);
+}
+
+
+/* =========================
+   CANVAS SIZE
+========================= */
+
+function changeCanvasSize() {
+
+    let value =
+        document
+            .getElementById(
+                "canvasSize"
+            )
+            .value;
+
+    let parts =
+        value.split("x");
+
+    let width =
+        Number(parts[0]);
+
+    let height =
+        Number(parts[1]);
+
+    updateCurrentFrame();
+
+    canvas.width =
+        width;
+
+    canvas.height =
+        height;
+
+    onionCanvas.width =
+        width;
+
+    onionCanvas.height =
+        height;
+
+    frames = frames.map(
+        function(frame) {
+
+            let temp =
+                document.createElement(
+                    "canvas"
+                );
+
+            temp.width = width;
+
+            temp.height = height;
+
+            let tempCtx =
+                temp.getContext(
+                    "2d"
+                );
+
+            tempCtx.fillStyle =
+                "white";
+
+            tempCtx.fillRect(
+                0,
+                0,
+                width,
+                height
+            );
+
+            let img =
+                new Image();
+
+            /*
+                Returning the old frame
+                asynchronously isn't useful
+                here, so create a white
+                frame for the new canvas.
+            */
+
+            return temp.toDataURL(
+                "image/png"
+            );
+
+        }
+    );
+
+    currentFrame = 0;
+
+    loadFrame(0);
+}
+
+
+/* =========================
+   KEYBOARD SHORTCUTS
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(e) {
+
+        if (
+            e.target.tagName ===
+            "INPUT"
+        ) {
+            return;
+        }
+
+        /* B = Brush */
+
+        if (
+            e.key.toLowerCase()
+            === "b"
+        ) {
+
+            setTool("brush");
+
+        }
+
+        /* E = Eraser */
+
+        if (
+            e.key.toLowerCase()
+            === "e"
+        ) {
+
+            setTool("eraser");
+
+        }
+
+        /* N = New Frame */
+
+        if (
+            e.key.toLowerCase()
+            === "n"
+        ) {
+
+            addFrame();
+
+        }
+
+        /* SPACE = Play */
+
+        if (
+            e.code ===
+            "Space"
+        ) {
+
+            e.preventDefault();
+
+            if (playing) {
+
+                stopAnimation();
+
+            } else {
+
+                playAnimation();
+
+            }
+
+        }
+
+        /* LEFT */
+
+        if (
+            e.key ===
+            "ArrowLeft"
+        ) {
+
+            previousFrame();
+
+        }
+
+        /* RIGHT */
+
+        if (
+            e.key ===
+            "ArrowRight"
+        ) {
+
+            nextFrame();
+
+        }
+
+        /* CTRL + Z */
+
+        if (
+            e.ctrlKey &&
+            e.key.toLowerCase()
+            === "z"
+        ) {
+
+            e.preventDefault();
+
+            undo();
+
+        }
+
+    }
+);
+
+
+/* =========================
+   RESIZE CANVAS DISPLAY
+========================= */
+
+function resizeCanvasDisplay() {
+
+    let area =
+        document.getElementById(
+            "canvasArea"
+        );
+
+    let maxWidth =
+        area.clientWidth - 30;
+
+    let maxHeight =
+        area.clientHeight - 30;
+
+    let scale =
+        Math.min(
+            maxWidth / canvas.width,
+            maxHeight / canvas.height
+        );
+
+    if (scale > 1) {
+        scale = 1;
+    }
+
+    let width =
+        canvas.width * scale;
+
+    let height =
+        canvas.height * scale;
+
+    canvas.style.width =
+        width + "px";
+
+    canvas.style.height =
+        height + "px";
+
+    onionCanvas.style.width =
+        width + "px";
+
+    onionCanvas.style.height =
+        height + "px";
+}
+
+
+window.addEventListener(
+    "resize",
+    resizeCanvasDisplay
+);
+
+resizeCanvasDisplay();
+
+</script>
+
+</body>
+</html>
+```
